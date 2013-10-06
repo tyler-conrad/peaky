@@ -1,2 +1,11 @@
 Interactive mode:
 python -i -- src/peaky.py [-kivy_arg] -- -i
+
+Dependencies:
+	kivy
+	twisted
+	procps
+	
+	testing:
+		pytest
+		pytest-quickcheck

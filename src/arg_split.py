@@ -5,7 +5,7 @@
 
 """
 
-from sys import argv
+import sys
 from log import Loggable
 
 class ArgSplitterBase(object):
@@ -16,35 +16,47 @@ class ArgSplitterBase(object):
         return _list[_list.index('--') + 1:]
 
     def kivy_args(self):
-        return self.args_before_sep(argv)
+        return self.args_before_sep(sys.argv)
 
     def non_kivy_args(self):
-        return self.args_after_sep(argv)
+        return self.args_after_sep(sys.argv)
 
     def top_args(self):
         nko = self.non_kivy_args()
         return self.args_before_sep(nko)
 
+    def append_peaky_args(self, arg_list, non_kivy_args):
+        arg_list.extend(self.args_after_sep(non_kivy_args))
+        return arg_list
+
     def peaky_args(self):
-        nko = self.non_kivy_args()
-        pa = [argv[0]]
-        pa.extend(self.args_after_sep(nko))
-        return pa
+        return self.append_peaky_args(
+            [sys.argv[0]],
+            self.non_kivy_args())
 
 class ArgSplitterErr(Loggable, ArgSplitterBase):
+    def append_peaky_args(self, arg_list, non_kivy_args):
+        try:
+            arg_list = super(ArgSplitterErr, self).append_peaky_args(
+                arg_list,
+                non_kivy_args)
+        except ValueError:
+            self.debug('No peaky arguments.')
+        return arg_list
+
     def kivy_args(self):
         try:
             ko = super(ArgSplitterErr, self).kivy_args()
         except ValueError:
             self.debug('No kivy/non-kivy argument separator.')
-            return argv
+            return sys.argv
         return ko
 
     def non_kivy_args(self):
         try:
             nko = super(ArgSplitterErr, self).non_kivy_args()
         except ValueError:
-            self.debug("Only kivy argument passed.")
+            self.debug("Only kivy arguments passed.")
             return []
         return nko
 
@@ -57,11 +69,9 @@ class ArgSplitterErr(Loggable, ArgSplitterBase):
         return to
 
     def peaky_args(self):
-        try:
-            po = super(ArgSplitterErr, self).peaky_args()
-        except ValueError:
+        po = super(ArgSplitterErr, self).peaky_args()
+        if len(po) == 1:
             self.debug('No peaky arguments.')
-            return []
         return po
 
 class ArgSplitterLog(ArgSplitterErr):
