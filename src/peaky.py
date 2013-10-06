@@ -39,43 +39,48 @@ class Peaky(App):
         install_twisted_reactor()
 
 class LoaderBase(Loggable):
-    def parse_opts(self, opt_parser):
-        opt_parser.parseOptions(argv[argv.index('--') + 1:])
+    def parse_opts(self, opt_parser, splitter):
+        opt_parser.parseOptions(splitter.peaky_args())
 
-    def get_opt(self):
+    def peaky_opts(self, splitter):
         opt_parser = Options()
-        self.parse_opts(opt_parser)
+        self.parse_opts(opt_parser, splitter)
         return QueryDict(opt_parser)
 
     def term(self):
         return environ['TERM']
 
-    def spawn_top(self, opt):
+    def spawn_top(self, peaky_opts, splitter):
         from twisted.internet import reactor
+        top_args = ['top']
+        top_args.extend(splitter.top_args())
+        
         reactor.spawnProcess(
             processProtocol=TopProc(),
             executable='top',
-            args=['top'],
+            args=top_args,
             env={
                 'TERM': self.term(),
                 'COLUMNS': '512',
-                'LINES': str(opt.lines)},
+                'LINES': str(peaky_opts.lines)},
             usePTY=1)
 
     def load(self):
+        splitter = ArgSplitter()
+        splitter.kivy_args()
+        po = self.peaky_opts(splitter)
+        
         app = Peaky(kv_file='peaky.kv')
-        opt = self.get_opt()
-        print opt.interactive
-        if opt.interactive:
+        if po.interactive:
             InteractiveLauncher(app).run()
         else:
             app.run()
-        self.spawn_top(opt)
+        self.spawn_top(po, splitter)
 
 class LoaderErr(LoaderBase):
-    def parse_opts(self, opt_parser):
+    def parse_opts(self, opt_parser, splitter):
         try:
-            opt = super(LoaderErr, self).parse_opts(opt_parser)
+            opt = super(LoaderErr, self).parse_opts(opt_parser, splitter)
         except UsageError as ue:
             print '%s: %s' % (argv[0], ue)
             print '%s: Try --help for usage details.' % (argv[0])
