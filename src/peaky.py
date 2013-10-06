@@ -33,9 +33,14 @@ class Options(Options):
     optParameters = [
         ['lines', 'l', 1024, 'Max number of lines output from top.', int]]
 
+class Peaky(App):
+    def __init__(self, **kw):
+        super(Peaky, self).__init__(**kw)
+        install_twisted_reactor()
+
 class LoaderBase(Loggable):
     def parse_opts(self, opt_parser):
-        opt_parser.parseOptions(argv[1:])
+        opt_parser.parseOptions(argv[argv.index('--') + 1:])
 
     def get_opt(self):
         opt_parser = Options()
@@ -52,7 +57,7 @@ class LoaderBase(Loggable):
             executable='top',
             args=['top'],
             env={
-                'TERM': environ['TERM'],
+                'TERM': self.term(),
                 'COLUMNS': '512',
                 'LINES': str(opt.lines)},
             usePTY=1)
@@ -60,10 +65,12 @@ class LoaderBase(Loggable):
     def load(self):
         app = Peaky(kv_file='peaky.kv')
         opt = self.get_opt()
+        print opt.interactive
         if opt.interactive:
             InteractiveLauncher(app).run()
         else:
             app.run()
+        self.spawn_top(opt)
 
 class LoaderErr(LoaderBase):
     def parse_opts(self, opt_parser):
@@ -77,17 +84,12 @@ class LoaderErr(LoaderBase):
 
     def term(self):
         try:
-            term = super(LoaderErr, self).env_term()
+            term = super(LoaderErr, self).term()
         except KeyError:
             print 'TERM environment variable not set.'
         return term
 
 class Loader(LoaderErr):
     pass
-
-class Peaky(App):
-    def __init__(self, **kw):
-        super(Peaky, self).__init__(**kw)
-        install_twisted_reactor()
 
 Loader().load()
