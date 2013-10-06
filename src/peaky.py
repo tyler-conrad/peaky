@@ -4,17 +4,17 @@
 '''
 Usage: peaky.py [options]
 Options:
+  -i, --interactive  Launch in interactive mode.
   -l, --lines=   Max number of lines output from top. [default: 1024]
       --version  Display Twisted version and exit.
       --help     Display this help and exit.
 '''
 
-from sys import argv
+from arg_split import ArgSplitter
 from os import environ
 
 from twisted.python.usage import Options
 from twisted.python.usage import UsageError
-
 from twisted.python.log import PythonLoggingObserver
 PythonLoggingObserver(loggerName='kivy').start()
 
@@ -40,7 +40,7 @@ class Peaky(App):
 
 class LoaderBase(Loggable):
     def parse_opts(self, opt_parser, splitter):
-        opt_parser.parseOptions(splitter.peaky_args())
+        opt_parser.parseOptions(splitter.peaky_args()[1:])
 
     def peaky_opts(self, splitter):
         opt_parser = Options()
@@ -82,8 +82,9 @@ class LoaderErr(LoaderBase):
         try:
             opt = super(LoaderErr, self).parse_opts(opt_parser, splitter)
         except UsageError as ue:
-            print '%s: %s' % (argv[0], ue)
-            print '%s: Try --help for usage details.' % (argv[0])
+            script_name = splitter.peaky_args()[0]
+            print '%s: %s' % (script_name, ue)
+            print '%s: Try --help for usage details.' % (script_name)
             exit(1)
         return opt
 

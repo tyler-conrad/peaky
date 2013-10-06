@@ -27,7 +27,9 @@ class ArgSplitterBase(object):
 
     def peaky_args(self):
         nko = self.non_kivy_args()
-        return self.args_after_sep(nko)
+        pa = [argv[0]]
+        pa.extend(self.args_after_sep(nko))
+        return pa
 
 class ArgSplitterErr(Loggable, ArgSplitterBase):
     def kivy_args(self):
