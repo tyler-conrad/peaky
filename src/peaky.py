@@ -12,16 +12,19 @@ Options:
 from sys import argv
 from os import environ
 
-from twisted.internet.protocol import ProcessProtocol
 from twisted.python.usage import Options
 from twisted.python.usage import UsageError
-from twisted.conch.ui.ansi import AnsiParser
-from twisted.conch.ui.ansi import ColorText
+
+from twisted.python.log import PythonLoggingObserver
+PythonLoggingObserver(loggerName='kivy').start()
 
 from kivy.app import App
 from kivy.support import install_twisted_reactor
 from kivy.utils import QueryDict
 from kivy.interactive import InteractiveLauncher
+
+from top import TopProc
+from log import Loggable
 
 class Options(Options):
     optFlags = [
@@ -30,7 +33,7 @@ class Options(Options):
     optParameters = [
         ['lines', 'l', 1024, 'Max number of lines output from top.', int]]
 
-class LoaderBase(object):
+class LoaderBase(Loggable):
     def parse_opts(self, opt_parser):
         opt_parser.parseOptions(argv[1:])
 
@@ -81,60 +84,6 @@ class LoaderErr(LoaderBase):
 
 class Loader(LoaderErr):
     pass
-
-class PeakyAnsiParser(AnsiParser, object):
-    def __init__(
-            self,
-            defaultFG=ColorText.WHITE,
-            defaultBG=ColorText.BLACK):
-        super(PeakyAnsiParser, self).__init__(
-            defaultFG,
-            defaultBG)
-        self.color_text_list = []
-
-    def writeString(self, color_text):
-        text = color_text.text = color_text.text.replace('\r\n', '')
-        if not text or text == 'B':
-            return
-        self.color_text_list.append(color_text)
-
-class TopProc(ProcessProtocol):
-    def __init__(self):
-        self.data = ''
-
-    def connectionMade(self):
-        pass
-
-    def outReceived(self, data):
-        if 'top -' in data:
-            def color_text_list():
-                pap = PeakyAnsiParser()
-                pap.parseString(self.data)
-                return pap.color_text_list
-
-            self.data = data
-        else:
-            self.data += data
-
-    def errReceived(self, data):
-        print "errReceived! with %d bytes!" % len(data)
-        print data
-
-    def inConnectionLost(self):
-        print "inConnectionLost! stdin is closed! (we probably did it)"
-
-    def outConnectionLost(self):
-        print "outConnectionLost! The child closed their stdout!"
-
-    def errConnectionLost(self):
-        print "errConnectionLost! The child closed their stderr."
-
-    def processExited(self, reason):
-        print "processExited, status %d" % (reason.value.exitCode,)
-
-    def processEnded(self, reason):
-        print "processEnded, status %d" % (reason.value.exitCode,)
-        print "quitting"
 
 class Peaky(App):
     def __init__(self, **kw):
