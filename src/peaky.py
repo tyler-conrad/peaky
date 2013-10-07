@@ -50,10 +50,10 @@ class LoaderBase(Loggable):
     def term(self):
         return environ['TERM']
 
-    def spawn_top(self, peaky_opts, splitter):
+    def spawn_top(self, peaky_opts, top_args):
         from twisted.internet import reactor
         top_args = ['top']
-        top_args.extend(splitter.top_args())
+        top_args.extend(top_args)
         
         reactor.spawnProcess(
             processProtocol=TopProc(),
@@ -65,6 +65,9 @@ class LoaderBase(Loggable):
                 'LINES': str(peaky_opts.lines)},
             usePTY=1)
 
+    def run_interactive(self, app):
+        InteractiveLauncher(app).run()
+
     def load(self):
         splitter = ArgSplitter()
         splitter.kivy_args()
@@ -72,10 +75,10 @@ class LoaderBase(Loggable):
         
         app = Peaky(kv_file='peaky.kv')
         if po.interactive:
-            InteractiveLauncher(app).run()
+            self.run_interactive(app)
         else:
             app.run()
-        self.spawn_top(po, splitter)
+        self.spawn_top(po, splitter.top_args())
 
 class LoaderErr(LoaderBase):
     def parse_opts(self, opt_parser, splitter):
@@ -95,7 +98,16 @@ class LoaderErr(LoaderBase):
             print 'TERM environment variable not set.'
         return term
 
-class Loader(LoaderErr):
+class LoaderLog(LoaderErr):
+    def run_interactive(self, app):
+        self.info('Starting app in interactive mode.')
+        super(LoaderLog, self).run_interactive()
+
+    def spawn_top(self, peaky_opts, top_args):
+        self.debug('Spawning top subprocess.')
+        super(LoaderLog, self).spawn_top(peaky_opts, top_args)
+
+class Loader(LoaderLog):
     pass
 
 Loader().load()

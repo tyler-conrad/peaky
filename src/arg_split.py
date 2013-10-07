@@ -87,7 +87,7 @@ class ArgSplitterLog(ArgSplitterErr):
 
     def peaky_args(self):
         po = super(ArgSplitterLog, self).peaky_args()
-        self.info(' Peaky options: {}', ' '.join(po))
+        self.info('Peaky options: {}', ' '.join(po))
         return po
 
 class ArgSplitter(ArgSplitterLog):
