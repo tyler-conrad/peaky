@@ -9,8 +9,10 @@ Options:
       --version  Display Twisted version and exit.
       --help     Display this help and exit.
 '''
-
+from sys import argv
 from arg_split import ArgSplitter
+ArgSplitter.argv = argv[:]
+
 from os import environ
 
 from twisted.python.usage import Options
@@ -101,7 +103,7 @@ class LoaderErr(LoaderBase):
 class LoaderLog(LoaderErr):
     def run_interactive(self, app):
         self.info('Starting app in interactive mode.')
-        super(LoaderLog, self).run_interactive()
+        super(LoaderLog, self).run_interactive(app)
 
     def spawn_top(self, peaky_opts, top_args):
         self.debug('Spawning top subprocess.')

@@ -5,7 +5,6 @@
 
 """
 
-import sys
 from log import Loggable
 
 class ArgSplitterBase(object):
@@ -16,10 +15,10 @@ class ArgSplitterBase(object):
         return _list[_list.index('--') + 1:]
 
     def kivy_args(self):
-        return self.args_before_sep(sys.argv)
+        return self.args_before_sep(self.argv)
 
     def non_kivy_args(self):
-        return self.args_after_sep(sys.argv)
+        return self.args_after_sep(self.argv)
 
     def top_args(self):
         nko = self.non_kivy_args()
@@ -31,7 +30,7 @@ class ArgSplitterBase(object):
 
     def peaky_args(self):
         return self.append_peaky_args(
-            [sys.argv[0]],
+            [self.argv[0]],
             self.non_kivy_args())
 
 class ArgSplitterErr(Loggable, ArgSplitterBase):
@@ -49,7 +48,7 @@ class ArgSplitterErr(Loggable, ArgSplitterBase):
             ko = super(ArgSplitterErr, self).kivy_args()
         except ValueError:
             self.debug('No kivy/non-kivy argument separator.')
-            return sys.argv
+            return self.argv
         return ko
 
     def non_kivy_args(self):
